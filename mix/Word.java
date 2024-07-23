@@ -136,7 +136,6 @@ public class Word {
             return;
         }
 
-        
         value.clear();
         value.addAll(w.value);
         

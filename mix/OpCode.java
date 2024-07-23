@@ -1,8 +1,13 @@
 package mix;
 
+import java.lang.classfile.Opcode;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.stream.*;
 
 class OpCode {
+    static HashMap<String, OpCode> strCodes;
+
     public int C; // - код операции после команды (5:5)
     public int F; // - уточнение кода операции, после команды (4:4)
     public int M; // - адрес команды после индексации 
@@ -32,6 +37,7 @@ class OpCode {
 
     public static ArrayList<OpCode> ops = new ArrayList<>();
     static {
+        
         ops.add(new OpCode(0, "NOP", -1,1));           //0   NOP         1 
         ops.add(new OpCode(1, "ADD", 0,5,2));     //1   ADD(0:5)    2
         ops.add(new OpCode(1, "FADD", 6, 2));       //1   FADD(6)     2
@@ -210,16 +216,65 @@ class OpCode {
         ops.add(new OpCode(61, "CMP5", 0, 5,2));    //61  CMP5(0:5)   2
         ops.add(new OpCode(62, "CMP6", 0, 5,2));    //62  CMP6(0:5)   2
         ops.add(new OpCode(63, "CMPX", 0, 5,2));    //63  CMPX(0:5)   2
+
+        strCodes = new HashMap();
+        for (OpCode op : ops){
+            strCodes.put(op.OP, op);
+        }
+
     };
+
     
+
+
+
     /*
      * [0 ][1][2][3][4][5]
      * [+-][A][A][I][F][C]
      * 
      */
-    Word strToCode(String str){
+    static Word strToCode(String str){
+        // op address, i(f)
         Word w = new Word(5);
-        String[] parts = str.split(str);
+        String[] parts = str.split(" ");
+        OpCode op = strCodes.get(parts[0]);
+        String[] parts1 = parts[1].split(",");
+        int AA;
+        int I = 0;
+        int F = 0;
+        int L = 0;
+        int R = 0;
+        if (parts1.length>1) {
+            AA = Integer.parseInt(parts1[0]);
+
+            String[] parts2 = parts1[1].split("\\(");
+            if (parts2.length>1) {
+                I = Integer.parseInt(parts2[0]);
+            } else {
+                I = Integer.parseInt(parts1[1]);
+            }
+        } else {
+            String[] parts2 = parts[1].split("\\(");
+            if (parts2.length>1) {
+                AA = Integer.parseInt(parts2[0]);
+                String[] parts3 = parts2[1].split(":");
+                if (parts3.length >1){
+                    L = Integer.parseInt(parts3[0]);
+                    R = Integer.parseInt(parts3[1].split("\\)")[0]);
+                    System.out.println("R="+R);
+                } else {
+                    F = Integer.parseInt(parts2[1]);
+                }
+            } else {
+                AA = Integer.parseInt(parts[1]);
+            }
+        }
+        if (R!=0) {
+            F = 8*L+R;
+        } else {
+            F=5;
+        }
+        System.out.println("str="+str+"; " + AA + " " + I +" " + " " + F + " "+ op.C);
         return w;
     }
 
@@ -231,5 +286,16 @@ class OpCode {
         String s5 = "LDA 2000(4:4)";
         String s6 = "LDA 2000(0:0)";
         String s7 = "LDA 2000(1:1)";
+        String s8 = "LDA 2000,2(0:3)"; //+ 2000 2 3 8 
+        String s9 = "LDA 2000,2(1:3)"; //+ 2000 2 11 8
+        String s10 = "LDA 2000(1:3)";  //+ 2000 0 11 8
+        String s11 = "LDA 2000";       //+ 2000 0 5 8
+        String s12 = "LDA -2000,4";    //- 2000 4 5 8
+        
+        // strToCode(s8);
+        // strToCode(s9);
+        strToCode(s10);
+        strToCode(s11);
+        strToCode(s12);
     }
 }
