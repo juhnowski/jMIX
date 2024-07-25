@@ -6,7 +6,9 @@ import java.util.HashMap;
 import java.util.stream.*;
 
 class OpCode {
-    static HashMap<String, OpCode> strCodes;
+    public static HashMap<String, OpCode> strCodes;
+    public static HashMap<Integer, OpCode> opCodes;
+    public static HashMap<String, Integer> charCodes;
 
     public int C; // - код операции после команды (5:5)
     public int F; // - уточнение кода операции, после команды (4:4)
@@ -18,6 +20,8 @@ class OpCode {
     public int R;
     public int t; // - время выполнения
     public int T; // - время блокировки
+
+    public OpCode(){}
 
     public OpCode(int C, String OP, int F, int t){
         this.C = C;
@@ -218,14 +222,97 @@ class OpCode {
         ops.add(new OpCode(63, "CMPX", 0, 5,2));    //63  CMPX(0:5)   2
 
         strCodes = new HashMap();
+        opCodes = new HashMap();
         for (OpCode op : ops){
             strCodes.put(op.OP, op);
+            opCodes.put(op.C, op);
         }
 
+        charCodes = new HashMap();
+        charCodes.put(" ", 0);
+        charCodes.put("A", 1);
+        charCodes.put("B", 2);
+        charCodes.put("C", 3);
+        charCodes.put("D", 4);
+        charCodes.put("E", 5);
+        charCodes.put("F", 6);
+        charCodes.put("G", 7);
+        charCodes.put("H", 8);
+        charCodes.put("I", 9);
+        charCodes.put("𐤃", 10);
+
+        charCodes.put("J", 11);
+        charCodes.put("K", 12);
+        charCodes.put("L", 13);
+        charCodes.put("M", 14);
+        charCodes.put("N", 15);
+        charCodes.put("O", 16);
+        charCodes.put("P", 17);
+        charCodes.put("Q", 18);
+        charCodes.put("R", 19);
+
+        charCodes.put("Σ", 20);
+        charCodes.put("П", 21);
+
+        charCodes.put("S", 22);
+    
+        charCodes.put("T", 23);
+        charCodes.put("U", 24);
+        charCodes.put("V", 25);
+        charCodes.put("W", 26);
+        charCodes.put("X", 27);
+        charCodes.put("Y", 28);
+        charCodes.put("Z", 29);
+        charCodes.put("0", 30);
+        charCodes.put("1", 31);
+        charCodes.put("2", 32);
+
+        charCodes.put("3", 33);
+        charCodes.put("4", 34);
+        charCodes.put("5", 35);
+        charCodes.put("6", 36);
+        charCodes.put("7", 37);
+        charCodes.put("8", 38);
+        charCodes.put("9", 39);
+        charCodes.put(".", 40);
+        charCodes.put(",", 41);
+        charCodes.put("(", 42);
+
+        charCodes.put(")", 43);
+        charCodes.put("+", 44);
+        charCodes.put("-", 45);
+        charCodes.put("*", 46);
+        charCodes.put("/", 47);
+        charCodes.put("=", 48);
+        charCodes.put("$", 49);
+        charCodes.put("<", 50);
+        charCodes.put(">", 51);
+        charCodes.put("@", 52);
+
+        charCodes.put(";", 53);
+        charCodes.put(":", 54);
+        charCodes.put("'", 55);
     };
 
     
-
+    static String toText(Word w) {
+        StringBuilder sb = new StringBuilder();
+        OpCode op = opCodes.get(w.getC());
+        sb.append(op.OP).append("\t");
+        sb.append(w.getAA());
+        int i = w.getI(); 
+        if (i!=0) {
+            sb.append(",").append(i);
+        }
+        int f = w.getF();
+        if (op.R>0) {
+            //F=8L+R
+            int L = f / 8;
+            int R = f % 8;
+            sb.append("(").append(L).append(":").append(R).append(")");
+        }
+        return sb.toString();
+    }
 
 
     /*
@@ -233,9 +320,9 @@ class OpCode {
      * [+-][A][A][I][F][C]
      * 
      */
-    static Word strToCode(String str){
+    static Word toWord(String str){
         // op address, i(f)
-        Word w = new Word(5);
+
         String[] parts = str.split(" ");
         OpCode op = strCodes.get(parts[0]);
         String[] parts1 = parts[1].split(",");
@@ -261,7 +348,6 @@ class OpCode {
                 if (parts3.length >1){
                     L = Integer.parseInt(parts3[0]);
                     R = Integer.parseInt(parts3[1].split("\\)")[0]);
-                    System.out.println("R="+R);
                 } else {
                     F = Integer.parseInt(parts2[1]);
                 }
@@ -275,7 +361,9 @@ class OpCode {
             F=5;
         }
         System.out.println("str="+str+"; " + AA + " " + I +" " + " " + F + " "+ op.C);
-        return w;
+        int[] val = {AA<0?Word.MINUS:Word.PLUS, Math.abs(AA), I, F, op.C};
+
+        return new Word(6, val);
     }
 
     public static void main(String[] args) {
@@ -292,10 +380,29 @@ class OpCode {
         String s11 = "LDA 2000";       //+ 2000 0 5 8
         String s12 = "LDA -2000,4";    //- 2000 4 5 8
         
-        // strToCode(s8);
-        // strToCode(s9);
-        strToCode(s10);
-        strToCode(s11);
-        strToCode(s12);
+        Word w1 = toWord(s1);
+        System.out.println(w1);
+        System.out.println(toText(w1));
+        System.out.println("----------------");
+        Word w2 = toWord(s9);
+        System.out.println(w2);
+        System.out.println(toText(w2));
+        System.out.println("----------------");
+        Word w3 = toWord(s10);
+        System.out.println(w3);
+        System.out.println(toText(w3));
+        System.out.println("----------------");
+        Word w4 = toWord(s11);
+        System.out.println(w4);
+        System.out.println(toText(w4));
+        System.out.println("----------------");
+        Word w5 = toWord(s11);
+        System.out.println(w5);
+        System.out.println(toText(w5));
+        System.out.println("----------------");
+        Word w6 = toWord(s12);
+        System.out.println(w6);
+        System.out.println(toText(w6));
+        System.out.println("----------------");
     }
 }

@@ -1,5 +1,6 @@
 package mix;
 import java.util.*;
+import java.math.*;
 
 public class Word {
     private int regCount; 
@@ -112,6 +113,27 @@ public class Word {
             }
         }
         return res;
+    }
+
+    public int getAA(){
+        return value.get(0).get()==-1?-1*(value.get(1).get()*64+value.get(2).get()):
+                                                value.get(1).get()*64+value.get(2).get();
+    }
+
+    public int getC() {
+        return value.get(5).get();
+    }
+
+    public int getF() {
+        return value.get(4).get();
+    }
+
+    public void setF(int f) {
+        value.get(4).set(f);
+    }
+
+    public int getI() {
+        return value.get(3).get();
     }
 
     public void set(Word w){

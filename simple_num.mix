@@ -1,0 +1,52 @@
+01 * ПРИМЕР ПРОГРАММЫ ... ТАБЛИЦА ПРОСТЫХ ЧИСЕЛ
+02 *
+03  L       EQU     500
+04  PRINTER EQU     18
+05  PRIME   EQU     -1
+06  BUF0    EQU     2000
+07  BUF1    EQU     BUF0+25
+08          ORIG    3000
+09  START   IOC     0(PRINTER)
+10          LD1     =1-L=
+11          LD2     =3=
+12  2H      INC1    1
+13          ST2     PRIME+L,1
+14          J1Z     2F
+15  4H      INC2    2
+16          ENT3    2
+17  6H      ENTA    0
+18          ENTX    0,2
+19          DIV     PRIME,3
+20          JXZ     4B
+21          CMPA    PRIME,3
+22          INC3    1
+23          JG      6B
+24          JMP     2B
+25  2H      OUT     TITLE(PRINTER)
+26          ENT4    BUF1+10
+27          ENT5    -50
+28  2H      INC5    L+1
+29  4H      LDA     PRIME,5
+30          CHAR
+31          STX     0,4(1:4)
+32          DEC4    1
+33          DEC5    50
+34          J5P     4B
+35          OUT     0,4(PRINTER)
+36          LD4     24,4
+37          J5N     2B
+38          HLT
+39  * ПЕРВОНАЧАЛЬНОЕ СОДЕРЖИМОЕ ТАБЛИЦ И БУФЕРОВ
+40          ORIG    PRIME+1
+41          CON     2 
+42          ORIG    BUF0-5
+43  TITLE   ALF     FIRST
+44          ALF     FIVE
+45          ALF     HUND
+46          ALF     RED P
+47          ALF     RIMES
+48          ORIG    BUF0+24
+49          CON     BUF1+10
+50          ORIG    BUF1+24
+51          CON     BUF0+10
+52          END     START         
