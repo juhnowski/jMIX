@@ -15,10 +15,11 @@ public class Word {
     public Word(int regCount, int[] val ){
         this.regCount = regCount;
         for (int i=0; i<val.length; i++){
-            if (val[i] >65 ) {
+            if (val[i] >63 ) {
                 pretty_idx++;
                 pretty_val_1_L[pretty_idx] = val[i];
                 int v1 = val[i];
+               
                 for (int j=regCount-2; j>0; --j){
                     double tmp = Math.pow(64.0, Double.valueOf(j));
                     int tmp1 = (int)(val[i]/tmp);
@@ -89,9 +90,11 @@ public class Word {
     public String toString(){
         StringBuilder sb = new StringBuilder();
         
-        sb.append("[").append(value.get(0).get()<0?"-":"+").append("]");
+        sb.append("[").append(value.get(0).get()==-1?"-":"+").append("]");
         for (int i=1; i<regCount; i++){
-            sb.append("[").append(value.get(i)).append("]");
+            if (i<value.size()) {
+                sb.append("[").append(value.get(i)).append("]");
+            }
         }
         
         return sb.toString();

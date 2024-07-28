@@ -28,7 +28,9 @@ public class Comp {
     public ArrayList<Integer> u = new ArrayList();
     public Asm asm = new Asm();
     public HashMap<String, Integer> variables = new HashMap<>();
-    public HashMap<String, Integer> labels = new HashMap<>();
+    public HashMap<Integer, Integer> labels = new HashMap<>();
+
+    ArrayList<String> lines = new ArrayList<>();
 
     public Comp(){
         for (int i=0; i<maxMem; i++){
@@ -36,8 +38,40 @@ public class Comp {
         }
     }
 
+    public int parse_int(String str){
+        try {
+            return Integer.parseInt(str);
+        } catch (Exception e){
+            Integer var = variables.get(str);
+            if (var != null) {
+                return var;
+            }
+        }
+
+        String[] s = str.split("\\+");
+        if (s.length>1){
+            int sum = 0;
+            for (int i=0; i<s.length; i++){
+                sum += parse_int(s[i]);
+            }
+
+            return sum;
+        }
+
+        String[] sm = str.split("\\-");
+        if (sm.length>1){
+            int dif = 0;
+            for (int i=0; i<sm.length; i++){
+                dif -= parse_int(sm[i]);
+            }
+            return dif;
+        }
+
+        return 0;
+    }
+
     public void loadAsm(String fileName) throws Exception{
-        ArrayList<String> lines = new ArrayList<>();
+        
 
         lines.addAll(Files.readAllLines(Paths.get(fileName)));
         
@@ -45,15 +79,16 @@ public class Comp {
         int s = lines.size();
         for (int i=0; i<s; i++) {
             String l = lines.get(i);
-            if (l.contains("=")) {
-                String[] s_con = l.split("=");
-                String[] s_con1 = s_con[1].split("=");
+            if (l.contains("\\=")) {
+                String[] s_con = l.split("\\=");
+                String[] s_con1 = s_con[1].split("\\=");
                 String eq = s_con1[0];
                 String alias = "con"+(++con_count);
                 l=l.replace("="+eq+"=", alias);
                 int last_line = Integer.parseInt(lines.getLast().split(" ")[0]);
                 lines.add(last_line +" "+alias+" CON "+eq);
                 lines.add(i,l);
+                variables.put(alias, parse_int(eq) );
             };
         }
 
@@ -62,7 +97,7 @@ public class Comp {
            Word w = asm.parse(lines.get(i), variables, labels);
            if (w!=null) {
                 if (idx==0) {
-                    idx = labels.get("ORIG");
+                    idx = variables.get("ORIG");
                 } else {
                     idx++;
                 }
@@ -73,8 +108,15 @@ public class Comp {
 
 
     public void printMem(int from, int to){
-        for (int i=0; i<to; i++){
-            System.out.println(i+": \t"+mem.get(i));
+        System.out.println("------------- mem -----------------");
+        for (int i=from; i<to; i++){
+            System.out.print(i+": \t"+mem.get(i)+"\t");
+            System.out.print(OpCode.toText(mem.get(i))+"\t");
+            int ln = i-3000+8;
+            if (ln<lines.size()) {
+                System.out.println("\t * "+lines.get(ln));
+            }
+            
         }
     }
 
@@ -84,18 +126,19 @@ public class Comp {
         try {
             c.loadAsm("simple_num.mix");
 
-            System.out.println("variables:");
-            for (String s:c.variables.keySet()){
-                System.out.println(s+":"+c.variables.get(s));
-            }
+            // System.out.println("variables:");
+            // for (String s:c.variables.keySet()){
+            //     System.out.println(s+":"+c.variables.get(s));
+            // }
 
-            System.out.println("labels:");
-            for (String s:c.labels.keySet()){
-                System.out.println(s+":"+c.labels.get(s));
-            }
+            // System.out.println("labels:");
+            // for (String s:c.labels.keySet()){
+            //     System.out.println(s+":"+c.labels.get(s));
+            // }
 
             c.printMem(3000, 3060);
-
+            c.asm.print_variables(c.variables);
+            c.asm.print_lables(c.labels);
         } catch (Exception e){
             e.printStackTrace();
         }

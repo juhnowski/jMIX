@@ -7,7 +7,7 @@ import java.util.stream.*;
 
 class OpCode {
     public static HashMap<String, OpCode> strCodes;
-    public static HashMap<Integer, OpCode> opCodes;
+    public static HashMap<Integer, ArrayList<OpCode>> opCodes;
     public static HashMap<String, Integer> charCodes;
 
     public int C; // - код операции после команды (5:5)
@@ -225,7 +225,12 @@ class OpCode {
         opCodes = new HashMap();
         for (OpCode op : ops){
             strCodes.put(op.OP, op);
-            opCodes.put(op.C, op);
+            if (opCodes.get(op.C)==null) {
+                opCodes.put(op.C, new ArrayList<>());
+            }
+            
+            opCodes.get(op.C).add(op);    
+            
         }
 
         charCodes = new HashMap();
@@ -293,25 +298,62 @@ class OpCode {
         charCodes.put(":", 54);
         charCodes.put("'", 55);
     };
-
     
     static String toText(Word w) {
         StringBuilder sb = new StringBuilder();
-        OpCode op = opCodes.get(w.getC());
-        sb.append(op.OP).append("\t");
+        ArrayList<OpCode> op = opCodes.get(w.getC());
+        int op_f = w.getF();
+        // System.out.println("op_f="+op_f);
+        for(OpCode o:op){
+            // System.out.println("o.F="+o.F+" o.OP="+o.OP);
+            if (o.F == op_f) {
+                sb.append(o.OP).append(" ");
+                // System.out.println("o.OP="+o.OP);
+            }
+        }
+        
         sb.append(w.getAA());
         int i = w.getI(); 
         if (i!=0) {
             sb.append(",").append(i);
         }
         int f = w.getF();
-        if (op.R>0) {
+        if (op.size()>1) {
             //F=8L+R
             int L = f / 8;
             int R = f % 8;
             sb.append("(").append(L).append(":").append(R).append(")");
         }
         return sb.toString();
+    }
+
+    public static int parse_int(String str){
+        try {
+            return Integer.parseInt(str);
+        } catch (Exception e){
+
+        }
+
+        String[] s = str.split("\\+");
+        if (s.length>1){
+            int sum = 0;
+            for (int i=0; i<s.length; i++){
+                sum += parse_int(s[i]);
+            }
+
+            return sum;
+        }
+
+        String[] sm = str.split("\\-");
+        if (sm.length>1){
+            int dif = 0;
+            for (int i=0; i<sm.length; i++){
+                dif -= parse_int(sm[i]);
+            }
+            return dif;
+        }
+
+        return 0;
     }
 
 
@@ -323,86 +365,88 @@ class OpCode {
     static Word toWord(String str){
         // op address, i(f)
 
-        String[] parts = str.split(" ");
+        String[] parts_0 = str.split(" ");
+        ArrayList<String> p0 = new ArrayList<>();
+        for (int i=0; i<parts_0.length; i++) {
+            if (parts_0[i].length()>0){
+                p0.add(parts_0[i]);
+            }
+        }
+        String[] parts = p0.toArray(new String[0]);
         OpCode op = strCodes.get(parts[0]);
-        String[] parts1 = parts[1].split(",");
-        int AA;
+        
+        String[] parts1 = parts[1].split("\\,");
+        int AA=-1;
         int I = 0;
         int F = 0;
+        if (opCodes.get(op.C).size()>1){
+            F = op.F;
+        }
         int L = 0;
         int R = 0;
         if (parts1.length>1) {
-            AA = Integer.parseInt(parts1[0]);
+            AA = parse_int(parts1[0]);
 
             String[] parts2 = parts1[1].split("\\(");
             if (parts2.length>1) {
-                I = Integer.parseInt(parts2[0]);
+                I = parse_int(parts2[0]);
             } else {
-                I = Integer.parseInt(parts1[1]);
+                I = parse_int(parts1[1]);
             }
         } else {
             String[] parts2 = parts[1].split("\\(");
             if (parts2.length>1) {
-                AA = Integer.parseInt(parts2[0]);
-                String[] parts3 = parts2[1].split(":");
+                AA = parse_int(parts2[0]);
+                String[] parts3 = parts2[1].split("\\:");
                 if (parts3.length >1){
-                    L = Integer.parseInt(parts3[0]);
-                    R = Integer.parseInt(parts3[1].split("\\)")[0]);
+                    L = parse_int(parts3[0]);
+                    R = parse_int(parts3[1].split("\\)")[0]);
                 } else {
-                    F = Integer.parseInt(parts2[1]);
+                    F = parse_int(parts2[1]);
                 }
             } else {
-                AA = Integer.parseInt(parts[1]);
+                try {
+                    AA = parse_int(parts[1]);
+                } catch (Exception e){
+                    System.out.println("TODO: con обработать");
+                }
             }
         }
-        if (R!=0) {
-            F = 8*L+R;
-        } else {
-            F=5;
-        }
+
+        if (opCodes.get(op.C).size()==1){
+            if (R!=0) {
+                F = 8*L+R;
+            } else {
+                F=5;
+            }
+        } 
+
         System.out.println("str="+str+"; " + AA + " " + I +" " + " " + F + " "+ op.C);
-        int[] val = {AA<0?Word.MINUS:Word.PLUS, Math.abs(AA), I, F, op.C};
+        int AA1 = 0;
+        int znak = AA<0?Word.MINUS:Word.PLUS;
+        AA = Math.abs(AA);
+        if (AA > 63) {
+            AA1 = AA / 64;
+            AA = AA % 64;
+        }
+        System.out.println("str="+str+"; " + znak + " " + AA1 + " " + AA + " " + I +" " + " " + F + " "+ op.C);
+        int[] val = {znak, AA1, AA, I, F, op.C};
 
         return new Word(6, val);
     }
 
     public static void main(String[] args) {
-        String s1 = "LDA 2000"; 
-        String s2 = "LDA 2000(1:5)";
-        String s3 = "LDA 2000(3:5)";
-        String s4 = "LDA 2000(0:3)";
-        String s5 = "LDA 2000(4:4)";
-        String s6 = "LDA 2000(0:0)";
-        String s7 = "LDA 2000(1:1)";
-        String s8 = "LDA 2000,2(0:3)"; //+ 2000 2 3 8 
-        String s9 = "LDA 2000,2(1:3)"; //+ 2000 2 11 8
-        String s10 = "LDA 2000(1:3)";  //+ 2000 0 11 8
-        String s11 = "LDA 2000";       //+ 2000 0 5 8
-        String s12 = "LDA -2000,4";    //- 2000 4 5 8
+        String s1 = "LD1 -499"; 
         
-        Word w1 = toWord(s1);
-        System.out.println(w1);
-        System.out.println(toText(w1));
-        System.out.println("----------------");
-        Word w2 = toWord(s9);
+        // Word w1 = toWord(s1);
+        // System.out.println(w1);
+        // System.out.println(toText(w1));
+        // System.out.println("----------------");
+
+        String s2 = "INC1    1";
+        Word w2 = toWord(s2);
         System.out.println(w2);
         System.out.println(toText(w2));
-        System.out.println("----------------");
-        Word w3 = toWord(s10);
-        System.out.println(w3);
-        System.out.println(toText(w3));
-        System.out.println("----------------");
-        Word w4 = toWord(s11);
-        System.out.println(w4);
-        System.out.println(toText(w4));
-        System.out.println("----------------");
-        Word w5 = toWord(s11);
-        System.out.println(w5);
-        System.out.println(toText(w5));
-        System.out.println("----------------");
-        Word w6 = toWord(s12);
-        System.out.println(w6);
-        System.out.println(toText(w6));
         System.out.println("----------------");
     }
 }

@@ -24,8 +24,8 @@ public class Asm {
 
         String[] s = str.split("\\+");
         if (s.length>1){
-            int sum = parse_int(s[0], variables, labels);
-            for (int i=1; i<s.length; i++){
+            int sum = 0;
+            for (int i=0; i<s.length; i++){
                 sum += parse_int(s[i], variables, labels);
             }
 
@@ -34,8 +34,8 @@ public class Asm {
 
         String[] sm = str.split("\\-");
         if (sm.length>1){
-            int dif = parse_int(sm[0], variables, labels);;
-            for (int i=1; i<sm.length; i++){
+            int dif = 0;
+            for (int i=0; i<sm.length; i++){
                 dif -= parse_int(sm[i], variables, labels);
             }
             return dif;
@@ -97,17 +97,11 @@ public class Asm {
 
         if (OpCode.strCodes.containsKey(tmp.get(1)) ){
             String addr = tmp.get(2);
-            // for (String sv:variables.keySet()){
-            //     if (addr.contains(sv)) {
-            //         addr = addr.replace(sv, variables.get(sv).toString(line));
-            //     }
-            // }
-            if (addr.contains("=")) {
-                String[] eqa = addr.split("=");
-                addr = ""+parse_int(eqa[1], variables, labels);
+            for (String sv:variables.keySet()){
+                if (addr.contains(sv)) {
+                    addr = addr.replace(sv, variables.get(sv).toString(line));
+                }
             }
-
-            //int int_add
             if (tmp.get(1).equals("IOC")) {
                 System.out.println(tmp.get(1)+" "+addr);
                 Word tmp_w = OpCode.toWord(tmp.get(1)+" 0");
@@ -326,11 +320,9 @@ public class Asm {
         HashMap<Integer, Integer> labels = new HashMap<>();
 
         Asm asm = new Asm();
-        variables.put("L", 500);
+        Word w = asm.parse("09  START   IOC     0(PRINTER)", variables, labels);
+        System.out.println("w="+w);
         asm.print_variables(variables);
         asm.print_lables(labels);
-
-        Word w = asm.parse("10          LD1     =1-L=", variables, labels);
-        System.out.println("w="+w);
     }
 }
