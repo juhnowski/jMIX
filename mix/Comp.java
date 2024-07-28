@@ -29,6 +29,7 @@ public class Comp {
     public Asm asm = new Asm();
     public HashMap<String, Integer> variables = new HashMap<>();
     public HashMap<Integer, Integer> labels = new HashMap<>();
+    public HashMap<Integer, String> asm_ops = new HashMap<>();
 
     ArrayList<String> lines = new ArrayList<>();
 

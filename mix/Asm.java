@@ -60,15 +60,12 @@ public class Asm {
         }
     }
 
-    public Word parse(String str, HashMap<String, Integer> variables, HashMap<Integer, Integer> labels){
+    public Word parse(String str, HashMap<String, Integer> variables, HashMap<Integer, Integer> labels, HashMap<Integer, String> asm_ops){
         int line = 0;
         String label="";
         ArrayList<String> tmp = new ArrayList<>();
 
         if (str.length() <5) return null;
-
-        //01 * ПРИМЕР ПРОГРАММЫ ... ТАБЛИЦА ПРОСТЫХ ЧИСЕЛ
-        if (str.contains("*")) return null;
 
         String[] s = str.split(" ");
         for(String st:s){
@@ -85,9 +82,40 @@ public class Asm {
             e.printStackTrace();
         }
         
-        System.out.println("_____"+line+"_____");
+        // if (str.contains("*")) {
+        //     asm_ops.put(line, "*");
+        //     return null;
+        // }
 
-         if (tmp.get(1).contains("CHAR")||
+        if (tmp.get(1).contains("ORIG")) {
+            int orig_num = parse_int(tmp.get(2), variables, labels); 
+            asm_ops.put(line, "ORIG");
+            return new Word(orig_num, 6);
+        } 
+
+        if (tmp.get(1).contains("ALF")) {
+            char[] chars = tmp.get(2).toCharArray();
+            ArrayList<String> charList = new ArrayList<>();
+            for (char c:chars){
+                charList.add(""+c);
+            }
+
+            int[] val = {0,0,0,0,0,0};
+            for (int i=0; i<charList.size(); i++) {
+                val[i] = OpCode.charCodes.get(charList.get(i));
+            }
+
+            asm_ops.put(line, "ALF");
+
+            return new Word( 6, val);
+        }
+
+        if (tmp.get(1).contains("CON")) {
+            
+            asm_ops.put(line, "CON");
+        }
+
+        if (tmp.get(1).contains("CHAR")||
             tmp.get(1).contains("HLT") ||
             tmp.get(1).contains("NUM")
             ) {
@@ -333,6 +361,7 @@ public class Asm {
     public static void main(String[] args) {
         HashMap<String, Integer> variables = new HashMap<>();
         HashMap<Integer, Integer> labels = new HashMap<>();
+        HashMap<Integer, String> asm_ops = new HashMap<>();
 
         Asm asm = new Asm();
         variables.put("L", 500);
@@ -356,9 +385,12 @@ public class Asm {
         // System.out.println("w="+w3);
         // System.out.println("w="+w3.toString());
 
-        Word w4 = asm.parse("38          HLT", variables, labels);
-        System.out.println("w="+w4);
-        System.out.println("w="+w4.toString());
+        // Word w4 = asm.parse("38          HLT", variables, labels);
+        // System.out.println("w="+w4);
+        // System.out.println("w="+w4.toString());
         
+        Word w5 = asm.parse("47          ALF     RIMES", variables, labels, asm_ops);
+        System.out.println("w="+w5);
+        System.out.println("w="+w5.toString());
     }
 }
