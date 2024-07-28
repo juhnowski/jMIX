@@ -87,13 +87,17 @@ public class Asm {
         
         System.out.println("_____"+line+"_____");
 
-        if (tmp.get(1).contains("CHAR")) {
-            return new Word(6);
+         if (tmp.get(1).contains("CHAR")||
+            tmp.get(1).contains("HLT") ||
+            tmp.get(1).contains("NUM")
+            ) {
+            int[] val = {0,0,0,0,0,0};
+            OpCode ch_op = OpCode.strCodes.get(tmp.get(1));
+            val[5] = ch_op.C;
+            val[4] = ch_op.F;
+            return new Word(6, val);
         }
 
-        if (tmp.get(1).contains("HLT")) {
-            return new Word(6);
-        }
 
         if (OpCode.strCodes.containsKey(tmp.get(1)) ){
             String addr = tmp.get(2);
@@ -108,17 +112,22 @@ public class Asm {
             }
 
             //int int_add
-            if (tmp.get(1).equals("IOC")) {
+            if (tmp.get(1).equals("IOC")||tmp.get(1).equals("OUT")) {
                 System.out.println(tmp.get(1)+" "+addr);
-                Word tmp_w = OpCode.toWord(tmp.get(1)+" 0");
-                addr = addr.replace("(", "");
-                addr = addr.replace(")", "");
-                System.out.println("addr="+addr);
-                tmp_w.setF(parse_int(addr, variables, labels));
+                
+                String tmp_a[] = addr.split("\\(");
+                String tmp_I = tmp_a[0]; 
+                
+                Word tmp_w = OpCode.toWord(tmp.get(1)+" " + tmp_I, variables);
+                System.out.println("tmp_I ="+tmp_I);
+                String tmp_a1 = tmp_a[1].replace("(", "");
+                tmp_a1 = tmp_a1.replace(")", "");
+                System.out.println("tmp_a1="+tmp_a1);
+                tmp_w.setF(parse_int(tmp_a1, variables, labels));
                 return tmp_w; 
             }
             //проверить в лейблах и заменить в адресе
-            return OpCode.toWord(tmp.get(1)+" "+addr);
+            return OpCode.toWord(tmp.get(1)+" "+addr, variables);
         } else {
             if (tmp.get(1).contains("ORIG")) {
 
@@ -186,7 +195,7 @@ public class Asm {
                 String[] us = ustr.split("\\(");
                 ustr = us[1].replace(")", "");
                 
-                Word tmp_w = OpCode.toWord(tmp.get(2)+" 0");
+                Word tmp_w = OpCode.toWord(tmp.get(2)+" 0", variables);
                 System.out.println("ustr =" + ustr);
                 int u = parse_int(ustr,variables, labels);
                 System.out.println("u =" + u);
@@ -196,7 +205,7 @@ public class Asm {
                 return tmp_w; 
             }
             
-            return OpCode.toWord(tmp.get(2)+" "+addr);
+            return OpCode.toWord(tmp.get(2)+" "+addr, variables);
             //return OpCode.toWord(tmp.get(1)+" "+tmp.get(2));
         } else {
             if (label.length()>0){
@@ -327,10 +336,29 @@ public class Asm {
 
         Asm asm = new Asm();
         variables.put("L", 500);
+        variables.put("PRIME", -1);
+        variables.put("PRINTER", 18);
+        
+
         asm.print_variables(variables);
         asm.print_lables(labels);
 
-        Word w = asm.parse("10          LD1     =1-L=", variables, labels);
-        System.out.println("w="+w);
+        // Word w = asm.parse("10          LD1     =1-L=", variables, labels);
+        // System.out.println("w="+w);
+
+        // Word w1 = asm.parse("13          ST2     PRIME+L,1", variables, labels);
+        // System.out.println("w="+w);
+        
+        // Word w2 = asm.parse("35          OUT     0,4(PRINTER)", variables, labels);
+        // System.out.println("w="+w2);
+
+        // Word w3 = asm.parse("09  START   IOC     0(PRINTER)", variables, labels);
+        // System.out.println("w="+w3);
+        // System.out.println("w="+w3.toString());
+
+        Word w4 = asm.parse("38          HLT", variables, labels);
+        System.out.println("w="+w4);
+        System.out.println("w="+w4.toString());
+        
     }
 }

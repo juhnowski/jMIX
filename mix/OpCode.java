@@ -57,7 +57,7 @@ class OpCode {
     
         ops.add(new OpCode(5, "NUM", 0,10));        //5   NUM(0)      10
         ops.add(new OpCode(5, "CHAR", 1,10));       //5    CHAR(1)     10
-        ops.add(new OpCode(5, "CHAR", 2,10));       //5    HLT(2)      10
+        ops.add(new OpCode(5, "HLT", 2,10));       //5    HLT(2)      10
     
         ops.add(new OpCode(6, "SLA", 0,2));         //6   SLA(0)      2
         ops.add(new OpCode(6, "SRA", 1,2));         //6    SRA(1)      2
@@ -303,13 +303,20 @@ class OpCode {
         StringBuilder sb = new StringBuilder();
         ArrayList<OpCode> op = opCodes.get(w.getC());
         int op_f = w.getF();
-        // System.out.println("op_f="+op_f);
-        for(OpCode o:op){
-            // System.out.println("o.F="+o.F+" o.OP="+o.OP);
-            if (o.F == op_f) {
-                sb.append(o.OP).append(" ");
-                // System.out.println("o.OP="+o.OP);
+        
+        if (op.size()>1) {
+            for(OpCode o:op){
+                // System.out.println("o.F="+o.F+" o.OP="+o.OP);
+                if (o.F == op_f) {
+                    sb.append(o.OP).append(" ");
+                    // System.out.println("o.OP="+o.OP);
+                    if (o.C==5) {
+                        return sb.toString();
+                    }
+                }
             }
+        } else {
+            sb.append(op.get(0).OP).append(" ");
         }
         
         sb.append(w.getAA());
@@ -318,27 +325,42 @@ class OpCode {
             sb.append(",").append(i);
         }
         int f = w.getF();
-        if (op.size()>1) {
-            //F=8L+R
-            int L = f / 8;
-            int R = f % 8;
-            sb.append("(").append(L).append(":").append(R).append(")");
+        OpCode oc = op.get(0);
+        if (op.size()==1) {
+            //System.out.println("oc.OP="+oc.OP);
+            if ((oc.OP.contains("IOC")||oc.OP.contains("OUT"))) {
+                sb.append("(").append(f).append(")");
+                //System.out.println("##############");
+
+            } else {
+                int L = f / 8;
+                int R = f % 8;
+                //System.out.println("--------------");
+                sb.append("(").append(L).append(":").append(R).append(")");
+            }
+        } else {
+            sb.append("(").append(f).append(")");
         }
+        //System.out.println(sb);
         return sb.toString();
     }
 
-    public static int parse_int(String str){
+    public static int parse_int(String str, HashMap<String, Integer> variables){
         try {
             return Integer.parseInt(str);
         } catch (Exception e){
-
+            
+            if (variables.get(str)!=null) {
+                return variables.get(str);
+            }
         }
 
         String[] s = str.split("\\+");
         if (s.length>1){
             int sum = 0;
             for (int i=0; i<s.length; i++){
-                sum += parse_int(s[i]);
+                sum += parse_int(s[i],variables);
+                System.out.println("parse_int sum="+sum + " s[i]="+s[i]);
             }
 
             return sum;
@@ -348,12 +370,13 @@ class OpCode {
         if (sm.length>1){
             int dif = 0;
             for (int i=0; i<sm.length; i++){
-                dif -= parse_int(sm[i]);
+                dif -= parse_int(sm[i], variables);
             }
             return dif;
         }
 
-        return 0;
+       // System.out.println("parse_int str= "+str);
+        return 0;//parse_int(str, variables);
     }
 
 
@@ -362,7 +385,7 @@ class OpCode {
      * [+-][A][A][I][F][C]
      * 
      */
-    static Word toWord(String str){
+    static Word toWord(String str, HashMap<String, Integer> variables){
         // op address, i(f)
 
         String[] parts_0 = str.split(" ");
@@ -385,28 +408,28 @@ class OpCode {
         int L = 0;
         int R = 0;
         if (parts1.length>1) {
-            AA = parse_int(parts1[0]);
+            AA = parse_int(parts1[0], variables);
 
             String[] parts2 = parts1[1].split("\\(");
             if (parts2.length>1) {
-                I = parse_int(parts2[0]);
+                I = parse_int(parts2[0], variables);
             } else {
-                I = parse_int(parts1[1]);
+                I = parse_int(parts1[1], variables);
             }
         } else {
             String[] parts2 = parts[1].split("\\(");
             if (parts2.length>1) {
-                AA = parse_int(parts2[0]);
+                AA = parse_int(parts2[0], variables);
                 String[] parts3 = parts2[1].split("\\:");
                 if (parts3.length >1){
-                    L = parse_int(parts3[0]);
-                    R = parse_int(parts3[1].split("\\)")[0]);
+                    L = parse_int(parts3[0], variables);
+                    R = parse_int(parts3[1].split("\\)")[0], variables);
                 } else {
-                    F = parse_int(parts2[1]);
+                    F = parse_int(parts2[1], variables);
                 }
             } else {
                 try {
-                    AA = parse_int(parts[1]);
+                    AA = parse_int(parts[1], variables);
                 } catch (Exception e){
                     System.out.println("TODO: con обработать");
                 }
@@ -443,10 +466,16 @@ class OpCode {
         // System.out.println(toText(w1));
         // System.out.println("----------------");
 
-        String s2 = "INC1    1";
-        Word w2 = toWord(s2);
-        System.out.println(w2);
-        System.out.println(toText(w2));
+        // String s2 = "INC1    1";
+        // Word w2 = toWord(s2);
+        // System.out.println(w2);
+        // System.out.println(toText(w2));
+        // System.out.println("----------------");
+
+        String s3 = "ST2     499,1";
+        Word w3 = toWord(s3);
+        System.out.println(w3);
+        System.out.println(toText(w3));
         System.out.println("----------------");
     }
 }

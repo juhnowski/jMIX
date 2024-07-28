@@ -115,6 +115,8 @@ public class Comp {
             int ln = i-3000+8;
             if (ln<lines.size()) {
                 System.out.println("\t * "+lines.get(ln));
+            } else{
+                System.out.println("");
             }
             
         }
